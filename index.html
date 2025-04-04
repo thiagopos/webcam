@@ -6,50 +6,76 @@
   <title>Webcam Test</title>
 </head>
 <body>
+  <!-- Menu de navegação exclusivo para Electron -->
+  <nav id="electron-nav">
+    <a id="nav-registros" href="registros.html">Registros</a>
+  </nav>
+  
   <h1>Webcam Test</h1>
+  <!-- Elemento de vídeo para exibir o stream da webcam -->
   <video id="webcam" autoplay playsinline></video>
+  <!-- Botão para acionar a captura da imagem -->
   <button id="capture">Capturar Imagem</button>
+  <!-- Canvas oculto usado para capturar o frame do vídeo -->
   <canvas id="canvas" style="display: none;"></canvas>
 
   <script>
-    const video = document.getElementById('webcam');
-    const canvas = document.getElementById('canvas');
-    const captureButton = document.getElementById('capture');
+    // Referenciando os elementos do DOM
+    const video = document.getElementById('webcam');    // Exibe o stream da webcam
+    const canvas = document.getElementById('canvas');     // Usado para desenhar o frame capturado
+    const captureButton = document.getElementById('capture'); // Botão que dispara a captura
 
-    // Acessar a webcam
+    // Acessa a webcam solicitando permissão e atribui o stream ao elemento de vídeo
     navigator.mediaDevices.getUserMedia({ video: true })
       .then((stream) => {
+        // Define o stream recebido como fonte do vídeo
         video.srcObject = stream;
       })
       .catch((err) => {
+        // Em caso de erro (ex: acesso negado), registra o erro no console
         console.error('Erro ao acessar a webcam:', err);
       });
 
-    // Capturar imagem e enviar ao backend
+    // Configura o evento de clique no botão de captura
     captureButton.addEventListener('click', () => {
+      // Obtém o contexto 2D do canvas para desenhar a imagem
       const context = canvas.getContext('2d');
+      // Ajusta as dimensões do canvas para que correspondam às dimensões do vídeo
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      // Desenha o frame atual do vídeo no canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const imageData = canvas.toDataURL('image/png'); // Captura a imagem em Base64
+      // Converte o conteúdo do canvas para uma string em formato Base64 (PNG)
+      const imageData = canvas.toDataURL('image/png');
 
-      // Enviar ao backend
+      // Envia a imagem capturada para o servidor através de uma requisição POST
       fetch('http://smshmacn007:4400/upload', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        // Encapsula a imagem em um objeto JSON e a envia no corpo da requisição
         body: JSON.stringify({ image: imageData }),
       })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('Resposta do servidor:', data);
-        })
-        .catch((error) => {
-          console.error('Erro ao enviar a imagem:', error);
-        });
+      .then((response) => response.json()) // Converte a resposta em JSON
+      .then((data) => {
+        // Loga no console a resposta do servidor (sucesso ou erro)
+        console.log('Resposta do servidor:', data);
+      })
+      .catch((error) => {
+        // Em caso de falha na requisição, registra o erro
+        console.error('Erro ao enviar a imagem:', error);
+      });
     });
+
+    // Verifica se o ambiente é Electron, utilizando o userAgent
+    const isElectron = navigator.userAgent.includes("Electron");
+    if (!isElectron) {
+      // Se não for Electron, oculta o menu de navegação específico
+      const electronNav = document.getElementById('electron-nav');
+      if (electronNav) electronNav.style.display = 'none';
+    }
   </script>
 </body>
 </html>
