@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Webcam Test</title>
+</head>
+<body>
+  <h1>Webcam Test</h1>
+  <video id="webcam" autoplay playsinline></video>
+  <button id="capture">Capturar Imagem</button>
+  <canvas id="canvas" style="display: none;"></canvas>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const captureButton = document.getElementById('capture');
+
+    // Acessar a webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.error('Erro ao acessar a webcam:', err);
+      });
+
+    // Capturar imagem e enviar ao backend
+    captureButton.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const imageData = canvas.toDataURL('image/png'); // Captura a imagem em Base64
+
+      // Enviar ao backend
+      fetch('http://smshmacn007:4400/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: imageData }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Resposta do servidor:', data);
+        })
+        .catch((error) => {
+          console.error('Erro ao enviar a imagem:', error);
+        });
+    });
+  </script>
+</body>
+</html>
